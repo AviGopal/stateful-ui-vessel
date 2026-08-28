@@ -92,6 +92,46 @@ const asserts: InteractorAssertion[] = [];
 const attachments: InteractorAttachment[] = [];
 const MAX_HISTORY = 500;
 
+// ── Durable backing (2026-08-28) ─────────────────────────────────────────────
+// Panels and feedback are the escalation channel: gap-to-feature posts a
+// "Gap needs a human decision" panel whenever hopeless() excludes a gap. Holding
+// those only in memory meant a vessel restart destroyed every unanswered
+// question with no record it was ever asked — measured, 194 panels to 0 across
+// one restart. hopeless() escalates exactly the gaps that need a SLOW human
+// decision, which are exactly the ones that would not survive to be answered.
+// Only panels + feedback are persisted; observations/events/asserts/attachments
+// are telemetry and stay in memory.
+const STORE_PATH = process.env["UI_STORE_PATH"] ?? "/workspace/state/ui-panel-store.json";
+let lastPersistAt = 0;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+function writeNow(): void {
+  lastPersistAt = Date.now();
+  try {
+    const snapshot = JSON.stringify({ panels: Array.from(panels.values()), feedback });
+    void Bun.write(STORE_PATH, snapshot).catch(() => {});
+  } catch { /* a store write must never break a resolve */ }
+}
+
+// Coalesce bursts: write at most once per 2s, but never DROP the last write.
+function persist(): void {
+  const since = Date.now() - lastPersistAt;
+  if (since >= 2000) { writeNow(); return; }
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => { persistTimer = null; writeNow(); }, 2000 - since);
+}
+
+function hydrate(): void {
+  try {
+    const raw = require("node:fs").readFileSync(STORE_PATH, "utf8") as string;
+    const saved = JSON.parse(raw) as { panels?: Panel[]; feedback?: Feedback[] };
+    for (const pn of saved.panels ?? []) if (pn && typeof pn.id === "string") panels.set(pn.id, pn);
+    for (const f of saved.feedback ?? []) if (f && typeof f.panelId === "string") feedback.push(f);
+    while (feedback.length > MAX_HISTORY) feedback.shift();
+  } catch { /* absent or corrupt — start empty, exactly as before */ }
+}
+hydrate();
+
 type Listener = (event: { event: string; data: unknown }) => void;
 const listeners = new Set<Listener>();
 
@@ -129,6 +169,7 @@ export function upsertPanel(
     updatedAt: now,
   };
   panels.set(p.id, stored);
+  persist();
   emit(existing ? "panel_updated" : "panel_added", stored);
   return stored;
 }
@@ -147,6 +188,7 @@ export function recordFeedback(
   };
   feedback.push(entry);
   if (feedback.length > MAX_HISTORY) feedback.shift();
+  persist();
   emit("feedback_received", entry);
   return entry;
 }
