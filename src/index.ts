@@ -42,6 +42,10 @@ const API_KEY = process.env.METABOB_API_KEY ?? "";
 const SHAPES = [
   "uiPanel_write",
   "uiQuestion_write",
+  // READ side of the escalation channel: uiQuestion_write created panels that
+  // nothing could enumerate, so a gap could ask a human a question and never
+  // learn whether it was answered.
+  "uiQuestion",
   "uiFeedback",
   "interactorObservation",
   "interactorEvent",
@@ -328,6 +332,17 @@ app.post("/resolve", async (c) => {
     const visibility = asVisibility(pointer.visibility, "public");
     const panel = upsertPanel({ id, title, body: panelBody, kind, importance, asks, visibility });
     return c.json({ resolved: true, shape: t, body: panel });
+  }
+  if (t === "uiQuestion") {
+    const wanted = typeof pointer.id === "string" ? pointer.id : undefined;
+    // A panel counts as a question if it CARRIES asks, or if its kind says so.
+    // Filtering on kind === "question" alone missed every real escalation:
+    // gap-to-feature.ts posts kind "gap_needs_human", and uiQuestion_write only
+    // defaults to "question" when the caller omits kind entirely.
+    const questions = listPanels()
+      .filter((pn) => (pn.asks?.length ?? 0) > 0 || pn.kind === "question" || pn.kind === "gap_needs_human")
+      .filter((pn) => (wanted ? pn.id === wanted : true));
+    return c.json({ resolved: true, shape: t, body: { questions, total: questions.length } });
   }
   return c.json({ resolved: false, error: `unsupported pointer.type: ${t}` }, 400);
 });
