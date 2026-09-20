@@ -107,14 +107,23 @@ app.post("/api/panels", async (c) => {
   if (!body || !body.id || !body.title) {
     return c.json({ error: "id and title required" }, 400);
   }
+  if (body.body !== undefined && typeof body.body !== 'string') {
+    return c.json({ error: "body must be a string" }, 400);
+  }
+  const existing = listPanels().find(p => p.id === body.id);
+  
+  if (existing && (!body.title && !body.body && !body.kind && !body.importance && !body.asks)) {
+    return c.json({ error: "contentless write would erase panel properties" }, 409);
+  }
+  
   const panel = upsertPanel({
     id: body.id,
-    title: body.title,
-    body: body.body ?? "",
-    kind: body.kind ?? "info",
-    importance: body.importance ?? "medium",
-    asks: body.asks,
-    visibility: asVisibility(body.visibility, "public"),
+    title: body.title ?? existing?.title ?? "Untitled",
+    body: body.body ?? existing?.body ?? "",
+    kind: body.kind ?? existing?.kind ?? "info",
+    importance: body.importance ?? existing?.importance ?? "medium",
+    asks: body.asks !== undefined ? body.asks : existing?.asks,
+    visibility: asVisibility(body.visibility, existing?.visibility ?? "public"),
   });
   return c.json({ ok: true, panel });
 });
