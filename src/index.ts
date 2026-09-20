@@ -332,13 +332,13 @@ app.post("/resolve", async (c) => {
   }
   const t = pointer.type;
   if (t === "uiPanel_write" || t === "uiQuestion_write") {
-    const id = String(pointer.id ?? `panel-${Date.now()}`);
-    const title = String(pointer.title ?? "Untitled");
-    const panelBody = String(pointer.body ?? "");
-    const kind = String(pointer.kind ?? (t === "uiQuestion_write" ? "question" : "info"));
-    const importance = String(pointer.importance ?? "medium");
+    const id = String(Object.hasOwn(pointer, 'id') ? pointer.id : `panel-${Date.now()}`);
+    const title = String(Object.hasOwn(pointer, 'title') ? pointer.title : "Untitled");
+    const panelBody = String(Object.hasOwn(pointer, 'body') ? pointer.body : "");
+    const kind = String(Object.hasOwn(pointer, 'kind') ? pointer.kind : (t === "uiQuestion_write" ? "question" : "info"));
+    const importance = String(Object.hasOwn(pointer, 'importance') ? pointer.importance : "medium");
     const asks = Array.isArray(pointer.asks) ? (pointer.asks as Ask[]) : undefined;
-    const visibility = asVisibility(pointer.visibility, "public");
+    const visibility = asVisibility(Object.hasOwn(pointer, 'visibility') ? pointer.visibility : undefined, "public");
     const panel = upsertPanel({ id, title, body: panelBody, kind, importance, asks, visibility });
     return c.json({ resolved: true, shape: t, body: panel });
   }
