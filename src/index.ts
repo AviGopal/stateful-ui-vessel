@@ -332,13 +332,13 @@ app.post("/resolve", async (c) => {
   }
   const t = pointer.type;
   if (t === "uiPanel_write" || t === "uiQuestion_write") {
-    const id = String(Object.hasOwn(pointer, 'id') ? pointer.id : `panel-${Date.now()}`);
-    const title = Object.hasOwn(pointer, 'title') && pointer.title !== null && pointer.title !== undefined ? String(pointer.title) : "Untitled";
-    const panelBody = Object.hasOwn(pointer, 'body') && pointer.body !== null && pointer.body !== undefined ? String(pointer.body) : "";
-    const kind = Object.hasOwn(pointer, 'kind') && pointer.kind !== null && pointer.kind !== undefined ? String(pointer.kind) : (t === "uiQuestion_write" ? "question" : "info");
-    const importance = Object.hasOwn(pointer, 'importance') && pointer.importance !== null && pointer.importance !== undefined ? String(pointer.importance) : "medium";
-    const asks = Object.hasOwn(pointer, 'asks') && pointer.asks !== null && pointer.asks !== undefined && Array.isArray(pointer.asks) ? (pointer.asks as Ask[]) : undefined;
-    const visibility = asVisibility(Object.hasOwn(pointer, 'visibility') && pointer.visibility !== null && pointer.visibility !== undefined ? pointer.visibility : undefined, "public");
+    const id = (Object.hasOwn(pointer, 'id') && pointer.id != null) ? String(pointer.id) : `panel-${Date.now()}`;
+    const title = (Object.hasOwn(pointer, 'title') && typeof pointer.title === 'string') ? pointer.title : "Untitled";
+    const panelBody = (Object.hasOwn(pointer, 'body') && typeof pointer.body === 'string') ? pointer.body : "";
+    const kind = (Object.hasOwn(pointer, 'kind') && typeof pointer.kind === 'string') ? pointer.kind : (t === "uiQuestion_write" ? "question" : "info");
+    const importance = (Object.hasOwn(pointer, 'importance') && typeof pointer.importance === 'string') ? pointer.importance : "medium";
+    const asks = (Object.hasOwn(pointer, 'asks') && Array.isArray(pointer.asks)) ? (pointer.asks as Ask[]) : undefined;
+    const visibility = asVisibility((Object.hasOwn(pointer, 'visibility') && typeof pointer.visibility === 'string') ? pointer.visibility : undefined, "public");
     const panel = upsertPanel({ id, title, body: panelBody, kind, importance, asks, visibility });
     return c.json({ resolved: true, shape: t, body: panel });
   }
