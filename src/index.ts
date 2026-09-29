@@ -118,7 +118,7 @@ app.post("/api/panels", async (c) => {
   
   const panel = upsertPanel({
     id: body.id,
-    title: body.title ?? existing?.title ?? "Untitled",
+    title: (Object.hasOwn(body, 'title') && body.title != null) ? body.title : existing?.title ?? "Untitled",
     body: body.body ?? existing?.body ?? "",
     kind: body.kind ?? existing?.kind ?? "info",
     importance: body.importance ?? existing?.importance ?? "medium",
