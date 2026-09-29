@@ -338,12 +338,12 @@ app.post("/resolve", async (c) => {
   if (t === "uiPanel_write" || t === "uiQuestion_write") {
     const id = (Object.hasOwn(pointer, 'id') && pointer.id != null) ? String(pointer.id) : `panel-${Date.now()}`;
     const existing = listPanels().find((p) => p.id === id);
-    const title = Object.hasOwn(pointer, 'title') ? (typeof pointer.title === 'string' ? pointer.title : "Untitled") : (existing?.title ?? "Untitled");
-    const panelBody = Object.hasOwn(pointer, 'body') ? (typeof pointer.body === 'string' ? pointer.body : "") : (existing?.body ?? "");
-    const kind = (Object.hasOwn(pointer, 'kind') && typeof pointer.kind === 'string') ? pointer.kind : (existing?.kind ?? (t === "uiQuestion_write" ? "question" : "info"));
-    const importance = (Object.hasOwn(pointer, 'importance') && typeof pointer.importance === 'string') ? pointer.importance : (existing?.importance ?? "medium");
-    const asks = (Object.hasOwn(pointer, 'asks') && Array.isArray(pointer.asks)) ? (pointer.asks as Ask[]) : existing?.asks;
-    const visibility = (Object.hasOwn(pointer, 'visibility') && typeof pointer.visibility === 'string') ? asVisibility(pointer.visibility, "public") : existing?.visibility ?? "public";
+    const title = Object.hasOwn(pointer, 'title') ? (typeof pointer.title === 'string' ? pointer.title : "Untitled") : (existing && Object.hasOwn(existing, 'title') ? existing.title : "Untitled");
+    const panelBody = Object.hasOwn(pointer, 'body') ? (typeof pointer.body === 'string' ? pointer.body : "") : (existing && Object.hasOwn(existing, 'body') ? existing.body : "");
+    const kind = (Object.hasOwn(pointer, 'kind') && typeof pointer.kind === 'string') ? pointer.kind : (existing && Object.hasOwn(existing, 'kind') ? existing.kind : (t === "uiQuestion_write" ? "question" : "info"));
+    const importance = (Object.hasOwn(pointer, 'importance') && typeof pointer.importance === 'string') ? pointer.importance : (existing && Object.hasOwn(existing, 'importance') ? existing.importance : "medium");
+    const asks = (Object.hasOwn(pointer, 'asks') && Array.isArray(pointer.asks)) ? (pointer.asks as Ask[]) : (existing && Object.hasOwn(existing, 'asks') ? existing.asks : undefined);
+    const visibility = (Object.hasOwn(pointer, 'visibility') && typeof pointer.visibility === 'string') ? asVisibility(pointer.visibility, "public") : (existing && Object.hasOwn(existing, 'visibility') ? asVisibility(existing.visibility, "public") : "public");
     const panel = upsertPanel({ id, title, body: panelBody, kind, importance, asks, visibility });
     return c.json({ resolved: true, shape: t, body: panel });
   }
