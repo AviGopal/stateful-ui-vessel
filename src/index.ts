@@ -338,7 +338,7 @@ app.post("/resolve", async (c) => {
   if (t === "uiPanel_write" || t === "uiQuestion_write") {
     const id = (Object.hasOwn(pointer, 'id') && pointer.id != null) ? String(pointer.id) : `panel-${Date.now()}`;
     const existing = listPanels().find((p) => p.id === id);
-    const title = (Object.hasOwn(pointer, 'title') && typeof pointer.title === 'string') ? pointer.title : (existing?.title ?? "Untitled");
+    const title = Object.hasOwn(pointer, 'title') ? (typeof pointer.title === 'string' ? pointer.title : "Untitled") : (existing?.title ?? "Untitled");
     const panelBody = Object.hasOwn(pointer, 'body') ? (typeof pointer.body === 'string' ? pointer.body : "") : (existing?.body ?? "");
     const kind = (Object.hasOwn(pointer, 'kind') && typeof pointer.kind === 'string') ? pointer.kind : (existing?.kind ?? (t === "uiQuestion_write" ? "question" : "info"));
     const importance = (Object.hasOwn(pointer, 'importance') && typeof pointer.importance === 'string') ? pointer.importance : (existing?.importance ?? "medium");
