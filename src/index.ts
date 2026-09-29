@@ -339,7 +339,7 @@ app.post("/resolve", async (c) => {
     const kind = (Object.hasOwn(pointer, 'kind') && typeof pointer.kind === 'string') ? pointer.kind : (existing?.kind ?? (t === "uiQuestion_write" ? "question" : "info"));
     const importance = (Object.hasOwn(pointer, 'importance') && typeof pointer.importance === 'string') ? pointer.importance : (existing?.importance ?? "medium");
     const asks = (Object.hasOwn(pointer, 'asks') && Array.isArray(pointer.asks)) ? (pointer.asks as Ask[]) : existing?.asks;
-    const visibility = asVisibility((Object.hasOwn(pointer, 'visibility') && typeof pointer.visibility === 'string') ? pointer.visibility : undefined, existing?.visibility ?? "public");
+    const visibility = (Object.hasOwn(pointer, 'visibility') && typeof pointer.visibility === 'string') ? asVisibility(pointer.visibility, "public") : existing?.visibility ?? "public";
     const panel = upsertPanel({ id, title, body: panelBody, kind, importance, asks, visibility });
     return c.json({ resolved: true, shape: t, body: panel });
   }
